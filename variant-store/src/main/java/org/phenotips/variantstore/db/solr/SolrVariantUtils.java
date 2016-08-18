@@ -196,6 +196,9 @@ public final class SolrVariantUtils
         doc.setField(VariantsSchema.AC_TOT, 0);
         doc.setField(VariantsSchema.GT_HET, 0);
         doc.setField(VariantsSchema.GT_HOM, 0);
+        
+        // initialize multi-value field so that it clones as an empty list rather than a null value
+        doc.setField(VariantsSchema.CALLSET_IDS, Collections.emptyList());        
         return doc;
     }
 
@@ -209,7 +212,7 @@ public final class SolrVariantUtils
      *                  search.
      */
     public static void addVariantToDoc(SolrDocument doc, GAVariant variant, String callsetId, boolean isPublic) {
-        doc.setField(VariantsSchema.CALLSET_IDS, callsetId);
+        addMultiFieldValue(doc, VariantsSchema.CALLSET_IDS, callsetId);
 
         GACall call = variant.getCalls().get(0);
         int copies = 0;
@@ -237,6 +240,13 @@ public final class SolrVariantUtils
                 safeValueOf(getInfo(call, GACallInfoFields.EXOMISER_GENE_VARIANT_SCORE)));
         setCallsetField(doc, callsetId, VariantsSchema.EXOMISER_GENE_COMBINED_SCORE,
                 safeValueOf(getInfo(call, GACallInfoFields.EXOMISER_GENE_COMBINED_SCORE)));
+    }
+
+    private static void addMultiFieldValue(SolrDocument doc, String key, Object value) {
+        // clone array, sometimes it's unmodifiable
+        List<Object> values = new ArrayList<>(doc.getFieldValues(key));
+        values.add(value);
+        doc.setField(key, values);
     }
 
     /**
